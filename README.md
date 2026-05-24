@@ -5,20 +5,86 @@ A backend-focused asynchronous job platform inspired by Celery, Sidekiq, and Tem
 ## Architecture
 
 ```mermaid
-flowchart LR
-    Client --> API[FastAPI API]
-    API --> Auth[JWT Auth + Rate Limit]
-    API --> PG[(PostgreSQL jobs/users)]
-    API --> RedisCache[(Redis status cache)]
-    API --> Streams[Redis Streams priority queues]
-    Streams --> WorkerA[Worker instance]
-    Streams --> WorkerB[Worker instance]
-    WorkerA --> PG
-    WorkerB --> PG
-    WorkerA --> Retry[Retry zset]
-    WorkerB --> DLQ[Dead Letter Queue]
-    API --> Metrics[/metrics Prometheus]
+flowchart TB
+    Client[Client Applications] --> Edge[FastAPI API Container]
+
+    subgraph API[API Layer]
+        Edge --> Auth[JWT Auth]
+        Edge --> RateLimit[Redis Rate Limiter]
+        Edge --> JobService[Job Service]
+        Edge --> StatusAPI[Status and WebSocket APIs]
+        Edge --> Health[Health, Readiness, OpenAPI]
+    end
+
+    subgraph Data[Persistence and Queueing]
+        Postgres[(PostgreSQL\nusers, jobs, attempts, results)]
+        Cache[(Redis Cache\nhot job status, rate limits)]
+        High[Redis Stream\njobs:high]
+        Normal[Redis Stream\njobs:normal]
+        Low[Redis Stream\njobs:low]
+        Retry[(Redis Sorted Set\nretry schedule)]
+        DLQ[Redis Stream\njobs:dlq]
+    end
+
+    subgraph Workers[Worker Layer]
+        WorkerA[Worker Instance A\nconcurrent processors]
+        WorkerB[Worker Instance B\nconcurrent processors]
+        Reclaimer[Stuck Job Reclaimer]
+        Promoter[Retry Promoter]
+    end
+
+    subgraph Observability[Observability]
+        Logs[Structured JSON Logs]
+        Metrics[Prometheus /metrics]
+        Traces[OpenTelemetry hooks]
+    end
+
+    JobService --> Postgres
+    JobService --> Cache
+    JobService --> High
+    JobService --> Normal
+    JobService --> Low
+    StatusAPI --> Cache
+    StatusAPI --> Postgres
+    RateLimit --> Cache
+
+    High --> WorkerA
+    Normal --> WorkerA
+    Low --> WorkerA
+    High --> WorkerB
+    Normal --> WorkerB
+    Low --> WorkerB
+
+    WorkerA --> Postgres
+    WorkerB --> Postgres
+    WorkerA --> Retry
+    WorkerB --> Retry
+    WorkerA --> DLQ
+    WorkerB --> DLQ
+    Retry --> Promoter
+    Promoter --> High
+    Promoter --> Normal
+    Promoter --> Low
+    Reclaimer --> Postgres
+    Reclaimer --> High
+    Reclaimer --> Normal
+    Reclaimer --> Low
+
+    Edge --> Metrics
+    WorkerA --> Metrics
+    WorkerB --> Metrics
+    Edge --> Logs
+    WorkerA --> Logs
+    WorkerB --> Logs
+    Edge --> Traces
 ```
+
+The system is split into two deployable runtime roles that share the same codebase and container image:
+
+- `api`: handles authentication, validation, idempotent job submission, status reads, WebSocket status streaming, rate limiting, health checks, OpenAPI, and Prometheus metrics.
+- `worker`: consumes Redis Streams through a consumer group, claims jobs in PostgreSQL, executes job processors concurrently, records results, schedules retries, and moves terminal failures to the DLQ.
+
+PostgreSQL is the durable source of truth for job state. Redis Streams provide queue durability and fan-out across multiple worker instances. Redis cache is used only for hot reads and abuse prevention, so losing cached keys does not lose jobs.
 
 ## Queue Flow
 
