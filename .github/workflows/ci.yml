@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: jobs
+          POSTGRES_PASSWORD: jobs
+          POSTGRES_DB: jobs
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jobs -d jobs"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt pytest pytest-asyncio ruff
+      - run: ruff check .
+      - run: psql postgresql://jobs:jobs@localhost:5432/jobs -f migrations/001_init.sql
+      - run: pytest
+        env:
+          DATABASE_URL: postgresql+asyncpg://jobs:jobs@localhost:5432/jobs
+          REDIS_URL: redis://localhost:6379/0
+          JWT_SECRET: ci-secret

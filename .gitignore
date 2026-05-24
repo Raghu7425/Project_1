@@ -1,0 +1,46 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python packaging / virtualenvs
+.Python
+.venv/
+venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Test, lint, and coverage output
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and runtime files
+*.log
+logs/
+*.pid
+
+# Docker / local service data
+pg_data/
+redis_data/
+
+# Accidental nested repository directory
+Project_1/
+
+# Editors and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

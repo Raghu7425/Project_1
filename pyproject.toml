@@ -1,0 +1,40 @@
+[project]
+name = "distributed-job-platform"
+version = "0.1.0"
+description = "Production-style distributed job processing platform with FastAPI, PostgreSQL and Redis Streams."
+requires-python = ">=3.11"
+dependencies = [
+    "alembic>=1.13.2",
+    "asyncpg>=0.29.0",
+    "bcrypt>=4.1.3",
+    "email-validator>=2.2.0",
+    "fastapi>=0.111.0",
+    "httpx>=0.27.0",
+    "opentelemetry-api>=1.25.0",
+    "opentelemetry-instrumentation-fastapi>=0.46b0",
+    "opentelemetry-sdk>=1.25.0",
+    "prometheus-client>=0.20.0",
+    "psycopg[binary]>=3.2.1",
+    "pydantic-settings>=2.3.4",
+    "pyjwt>=2.8.0",
+    "python-json-logger>=2.0.7",
+    "redis>=5.0.7",
+    "sqlalchemy>=2.0.31",
+    "structlog>=24.2.0",
+    "uvicorn[standard]>=0.30.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.2",
+    "pytest-asyncio>=0.23.7",
+    "ruff>=0.5.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
