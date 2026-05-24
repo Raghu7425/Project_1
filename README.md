@@ -128,6 +128,35 @@ curl http://localhost:8000/ready
 curl http://localhost:8000/metrics
 ```
 
+## Deploying To Fly.io
+
+This repo includes [fly.toml](fly.toml), configured with two process groups from the same Docker image:
+
+- `api`: public FastAPI service
+- `worker`: background Redis Streams consumer
+
+High-level deployment:
+
+```bash
+fly auth login
+fly apps create your-unique-job-platform-name
+fly postgres create --name your-unique-job-platform-db --region bom
+fly postgres attach your-unique-job-platform-db --app your-unique-job-platform-name
+fly redis create
+fly secrets set REDIS_URL="redis://..."
+fly secrets set JWT_SECRET="replace-with-a-long-random-secret"
+fly deploy
+fly scale count api=1 worker=1
+```
+
+Then run the SQL migration against the Fly Postgres database:
+
+```bash
+fly ssh console -C "psql \$DATABASE_URL -f migrations/001_init.sql"
+```
+
+See [scripts/fly_deploy.md](scripts/fly_deploy.md) for the full Fly runbook, including Windows secret generation and scaling workers.
+
 ## Example API Calls
 
 ```bash
