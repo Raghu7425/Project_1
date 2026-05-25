@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>RealtimeAI Studio</title>
+    <title>Task Queue Console</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="shell">
       <aside class="sidebar">
         <div>
-          <p class="eyebrow">AI media pipeline</p>
-          <h1>RealtimeAI Studio</h1>
-          <p class="intro">Submit document, media, and AI analysis work, then watch the processing pipeline update live.</p>
+          <p class="eyebrow">Distributed task queue</p>
+          <h1>Task Queue Console</h1>
+          <p class="intro">Submit durable background jobs, route them through Redis Streams workers, and watch live status updates.</p>
         </div>
 
         <section class="auth-panel" aria-label="Authentication">
@@ -37,8 +37,8 @@
       <section class="workspace">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Live operations</p>
-            <h2>Processing Dashboard</h2>
+            <p class="eyebrow">Worker control plane</p>
+            <h2>Job Processing Dashboard</h2>
           </div>
           <button id="refreshStats" class="icon-button" type="button" title="Refresh stats" aria-label="Refresh stats">&#8635;</button>
         </header>
@@ -55,17 +55,17 @@
         <section class="content-grid">
           <form id="jobForm" class="panel">
             <div class="panel-heading">
-              <h3>Create Processing Job</h3>
-              <p>Choose a pipeline preset, tune the JSON payload, and stream status as workers complete it.</p>
+              <h3>Create Background Job</h3>
+              <p>Choose an example workflow, tune the JSON payload, and stream status as workers complete it.</p>
             </div>
 
             <label>
               Job type
               <select id="jobType">
-                <option value="document_ocr">Document OCR</option>
-                <option value="media_transcode">Media transcode</option>
-                <option value="ai_summarization">AI summarization</option>
-                <option value="content_moderation">Content moderation</option>
+                <option value="order_fulfillment">Order fulfillment</option>
+                <option value="inventory_recount">Inventory recount</option>
+                <option value="restock_alert">Restock alert</option>
+                <option value="sales_report">Sales report</option>
               </select>
             </label>
 
@@ -96,16 +96,16 @@
 
           <form id="uploadForm" class="panel">
             <div class="panel-heading">
-              <h3>Upload Document</h3>
-              <p>Upload a PDF, DOCX, text, or Markdown file for text extraction and summarization.</p>
+              <h3>Example File Job</h3>
+              <p>This sample adapter imports an inventory CSV; other apps can add their own upload endpoints.</p>
             </div>
 
             <label>
-              Document
-              <input id="documentFile" type="file" accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" />
+              Inventory CSV
+              <input id="documentFile" type="file" accept=".csv,text/csv" />
             </label>
 
-            <button class="primary" type="submit">Upload and process</button>
+            <button class="primary" type="submit">Upload and reconcile</button>
             <p id="uploadStatus" class="status-text"></p>
           </form>
 

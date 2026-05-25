@@ -20,10 +20,23 @@ async def main() -> None:
             token = register.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
         jobs = [
-            {"job_type": "document_ocr", "payload": {"pages": 32}, "priority": 1, "idempotency_key": "demo-ocr-1"},
-            {"job_type": "media_transcode", "payload": {"source_uri": "s3://bucket/video.mov"}, "priority": 4},
-            {"job_type": "ai_summarization", "payload": {"fail": True}, "priority": 2, "max_retries": 2},
-            {"job_type": "content_moderation", "payload": {"labels": {"adult": 0.92}}, "priority": 8},
+            {
+                "job_type": "order_fulfillment",
+                "payload": {"items": [{"sku": "BAG-001", "quantity": 2, "unit_price": 24.99}]},
+                "priority": 1,
+                "idempotency_key": "demo-order-1",
+            },
+            {
+                "job_type": "inventory_recount",
+                "payload": {"products": [{"sku": "MUG-110", "expected": 42, "counted": 36}]},
+                "priority": 4,
+            },
+            {"job_type": "restock_alert", "payload": {"fail": True}, "priority": 2, "max_retries": 2},
+            {
+                "job_type": "sales_report",
+                "payload": {"orders": [{"total": 25}, {"total": 75}]},
+                "priority": 8,
+            },
         ]
         for job in jobs:
             response = await client.post("/api/v1/jobs", json=job, headers=headers)

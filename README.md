@@ -1,6 +1,8 @@
-# Real-Time AI Media Processing Platform
+# Distributed Task Queue Platform
 
-A real-time AI, media, and document processing platform inspired by Celery, Sidekiq, and Temporal. It uses FastAPI for the API, PostgreSQL for durable metadata, Redis Streams for queueing, Redis for hot status cache and rate limiting, WebSockets for live job updates, and a separate worker process for concurrent AI/media/document execution.
+A durable distributed task queue platform inspired by Celery, Sidekiq, and Temporal. It uses FastAPI for the API, PostgreSQL for durable metadata, Redis Streams for queueing, Redis for hot status cache and rate limiting, WebSockets for live job updates, and a separate worker process for pluggable application workloads.
+
+The base platform should stay generic and strong. Shopping, inventory, media processing, analytics, recommendations, or Netflix-scale batch workflows should be built as workload modules on top of the same queueing, retry, idempotency, status, and worker foundation.
 
 ## Architecture
 
@@ -82,7 +84,7 @@ flowchart TB
 The system is split into two deployable runtime roles that share the same codebase and container image:
 
 - `api`: handles authentication, validation, idempotent processing requests, status reads, WebSocket status streaming, rate limiting, health checks, OpenAPI, and Prometheus metrics.
-- `worker`: consumes Redis Streams through a consumer group, claims jobs in PostgreSQL, executes AI/media/document processors concurrently, records results, schedules retries, and moves terminal failures to the DLQ.
+- `worker`: consumes Redis Streams through a consumer group, claims jobs in PostgreSQL, executes registered processors concurrently, records results, schedules retries, and moves terminal failures to the DLQ.
 
 PostgreSQL is the durable source of truth for job state. Redis Streams provide queue durability and fan-out across multiple worker instances. Redis cache is used only for hot reads and abuse prevention, so losing cached keys does not lose jobs.
 
@@ -168,16 +170,19 @@ curl -X POST http://localhost:8000/api/v1/jobs \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "job_type": "document_ocr",
+    "job_type": "order_fulfillment",
     "payload": {
-      "document_uri": "s3://incoming/invoice-1042.pdf",
-      "pages": 24,
-      "entities": ["invoice_number", "vendor", "total"],
+      "order_id": "ORD-1042",
+      "customer": "Asha Rao",
+      "items": [
+        {"sku": "BAG-001", "quantity": 2, "unit_price": 24.99},
+        {"sku": "MUG-110", "quantity": 1, "unit_price": 12.50}
+      ],
       "duration": 1
     },
     "priority": 1,
     "max_retries": 3,
-    "idempotency_key": "customer-123-invoice-2026-05-24"
+    "idempotency_key": "customer-123-order-1042"
   }'
 
 curl http://localhost:8000/api/v1/jobs/<job-id> \
@@ -187,12 +192,12 @@ curl http://localhost:8000/api/v1/admin/stats \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-Upload a local PDF, DOCX, text, or Markdown document for extraction and summarization:
+This repository includes commerce processors as examples. Upload a local inventory CSV with `sku`, `expected`, and `counted` columns:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/jobs/documents \
+curl -X POST http://localhost:8000/api/v1/jobs/inventory-import \
   -H "Authorization: Bearer $TOKEN" \
-  -F "file=@./sample.pdf"
+  -F "file=@./inventory.csv"
 ```
 
 Seed demo jobs:
@@ -211,11 +216,13 @@ python scripts/load_test.py --jobs 500 --concurrency 50
 
 `queued`, `processing`, `completed`, `failed`, `retrying`.
 
-## Processing Types
+## Example Processing Types
 
-`document_ocr`, `media_transcode`, `ai_summarization`, `content_moderation`.
+`order_fulfillment`, `inventory_recount`, `restock_alert`, `sales_report`.
 
-Document uploads are stored under `storage/uploads` and processed by workers through the normal Redis Streams job flow. Text-based PDFs work through `pypdf`, DOCX files through `python-docx`; scanned PDFs need an OCR engine such as Tesseract or a cloud OCR provider.
+Inventory uploads are stored under `storage/uploads` and processed by workers through the normal Redis Streams job flow.
+
+To build another application on the same base, add a processor to `app/worker/processors.py`, register it in `PROCESSORS`, and submit jobs with that `job_type`. The API accepts custom job type strings so each app can define its own namespace, for example `media.transcode`, `billing.invoice.generate`, or `recommendations.refresh_user_profile`.
 
 ## Production Notes
 

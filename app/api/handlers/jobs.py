@@ -13,13 +13,14 @@ from app.api.schemas import JobCreateRequest, JobResponse
 from app.config.settings import Settings
 from app.db.session import get_db
 from app.models.user import User
+from app.models.enums import JobType
 from app.queue.redis_streams import RedisJobQueue
 from app.repositories.jobs import JobRepository
 from app.services.jobs import JobService
 from app.utils.security import decode_access_token
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
-ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".txt", ".md", ".docx"}
+ALLOWED_INVENTORY_EXTENSIONS = {".csv"}
 
 
 @router.post("", response_model=JobResponse, status_code=202)
@@ -33,7 +34,7 @@ async def create_job(
 ) -> JobResponse:
     job = await JobService(JobRepository(db), queue, redis, settings).submit(
         user_id=user.id,
-        job_type=body.job_type.value,
+        job_type=body.job_type,
         payload=body.payload,
         priority=body.priority,
         max_retries=body.max_retries,
@@ -42,8 +43,8 @@ async def create_job(
     return JobResponse.model_validate(job)
 
 
-@router.post("/documents", response_model=JobResponse, status_code=202)
-async def upload_document_job(
+@router.post("/inventory-import", response_model=JobResponse, status_code=202)
+async def upload_inventory_job(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(current_user)],
     redis: Annotated[Redis, Depends(redis_dependency)],
@@ -53,12 +54,12 @@ async def upload_document_job(
     priority: int = 5,
     max_retries: int = 3,
 ) -> JobResponse:
-    original_name = Path(file.filename or "document").name
+    original_name = Path(file.filename or "inventory.csv").name
     extension = Path(original_name).suffix.lower()
-    if extension not in ALLOWED_DOCUMENT_EXTENSIONS:
+    if extension not in ALLOWED_INVENTORY_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="supported document types: .pdf, .txt, .md, .docx",
+            detail="supported inventory imports: .csv",
         )
     if priority < 1 or priority > 10 or max_retries < 0 or max_retries > 10:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="invalid job options")
@@ -82,13 +83,13 @@ async def upload_document_job(
 
     job = await JobService(JobRepository(db), queue, redis, settings).submit(
         user_id=user.id,
-        job_type="document_ocr",
+        job_type=JobType.INVENTORY_RECOUNT.value,
         payload={
             "file_path": str(stored_path),
             "filename": original_name,
             "content_type": file.content_type,
             "bytes": bytes_written,
-            "summarize": True,
+            "warehouse": "uploaded-count",
         },
         priority=priority,
         max_retries=max_retries,

@@ -2,40 +2,50 @@ import asyncio
 
 import pytest
 
-from app.worker.processors import ai_summarization, content_moderation, document_ocr, media_transcode
+from app.worker.processors import inventory_recount, order_fulfillment, restock_alert, sales_report
 
 
 def test_processors_return_realistic_results():
     async def run() -> tuple[dict, dict, dict]:
         return await asyncio.gather(
-            document_ocr({"duration": 0, "pages": 3}),
-            media_transcode({"duration": 0, "renditions": ["720p"]}),
-            content_moderation({"duration": 0, "labels": {"adult": 0.1}}),
+            order_fulfillment(
+                {
+                    "duration": 0,
+                    "items": [{"sku": "BAG-001", "quantity": 2, "unit_price": 24.99}],
+                }
+            ),
+            inventory_recount(
+                {
+                    "duration": 0,
+                    "products": [{"sku": "MUG-110", "expected": 42, "counted": 36}],
+                }
+            ),
+            sales_report({"duration": 0, "orders": [{"total": 25}, {"total": 75}]}),
         )
 
-    ocr, media, moderation = asyncio.run(run())
+    order, inventory, report = asyncio.run(run())
 
-    assert ocr["pages"] == 3
-    assert media["renditions"] == ["720p"]
-    assert moderation["action"] == "approve"
+    assert order["units"] == 2
+    assert inventory["adjustments"][0]["delta"] == -6
+    assert report["average_order_value"] == 50
 
 
-def test_ai_processor_can_simulate_provider_failure():
+def test_restock_processor_can_simulate_supplier_failure():
     with pytest.raises(RuntimeError):
-        asyncio.run(ai_summarization({"duration": 0, "fail": True}))
+        asyncio.run(restock_alert({"duration": 0, "fail": True}))
 
 
-def test_document_processor_extracts_and_summarizes_text_file(tmp_path):
-    document = tmp_path / "notes.txt"
-    document.write_text(
-        "Realtime processing is useful for document workflows. "
-        "Workers can extract text and summarize the important details. "
-        "The UI can stream status while the job runs.",
+def test_inventory_processor_imports_csv_file(tmp_path):
+    inventory = tmp_path / "inventory.csv"
+    inventory.write_text(
+        "sku,expected,counted\n"
+        "BAG-001,120,118\n"
+        "MUG-110,42,36\n",
         encoding="utf-8",
     )
 
-    result = asyncio.run(document_ocr({"duration": 0, "file_path": str(document)}))
+    result = asyncio.run(inventory_recount({"duration": 0, "file_path": str(inventory)}))
 
-    assert result["word_count"] >= 20
-    assert "Realtime processing" in result["extracted_text_preview"]
-    assert "Workers can extract text" in result["summary"]
+    assert result["products_checked"] == 2
+    assert result["adjustments"][0]["sku"] == "BAG-001"
+    assert result["requires_review"] is True

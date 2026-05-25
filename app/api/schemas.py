@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.models.enums import JobStatus, JobType
+from app.models.enums import JobStatus
 
 
 class RegisterRequest(BaseModel):
@@ -22,7 +22,7 @@ class TokenResponse(BaseModel):
 
 
 class JobCreateRequest(BaseModel):
-    job_type: JobType
+    job_type: str = Field(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_.:-]+$")
     payload: dict[str, Any]
     priority: int = Field(default=5, ge=1, le=10)
     max_retries: int = Field(default=3, ge=0, le=10)

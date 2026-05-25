@@ -10,7 +10,7 @@ class JobStatus(StrEnum):
 
 
 class JobType(StrEnum):
-    DOCUMENT_OCR = "document_ocr"
-    MEDIA_TRANSCODE = "media_transcode"
-    AI_SUMMARIZATION = "ai_summarization"
-    CONTENT_MODERATION = "content_moderation"
+    ORDER_FULFILLMENT = "order_fulfillment"
+    INVENTORY_RECOUNT = "inventory_recount"
+    RESTOCK_ALERT = "restock_alert"
+    SALES_REPORT = "sales_report"

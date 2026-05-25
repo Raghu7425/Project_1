@@ -6,31 +6,43 @@ const state = {
 };
 
 const payloads = {
-  document_ocr: {
-    document_uri: "s3://incoming/invoice-1042.pdf",
-    pages: 12,
-    language: "en",
-    entities: ["invoice_number", "vendor", "total", "due_date"],
+  order_fulfillment: {
+    order_id: "ORD-1042",
+    customer: "Asha Rao",
+    shipping_method: "express",
+    tax_rate: 0.08,
+    items: [
+      { sku: "BAG-001", name: "Canvas tote", quantity: 2, unit_price: 24.99 },
+      { sku: "MUG-110", name: "Ceramic mug", quantity: 1, unit_price: 12.5 },
+    ],
+    duration: 1.1,
+  },
+  inventory_recount: {
+    warehouse: "Mumbai FC-1",
+    products: [
+      { sku: "BAG-001", expected: 120, counted: 118 },
+      { sku: "TEE-204", expected: 64, counted: 64 },
+      { sku: "MUG-110", expected: 42, counted: 36 },
+    ],
     duration: 1,
   },
-  media_transcode: {
-    source_uri: "s3://incoming/product-demo.mov",
-    duration_seconds: 95.4,
-    codec: "h264",
-    container: "mp4",
-    renditions: ["1080p", "720p", "480p"],
-    duration: 1,
-  },
-  ai_summarization: {
-    model: "gpt-4.1-mini",
-    text: "Customer calls mention latency, onboarding friction, and positive support sentiment across enterprise accounts.",
-    topics: ["latency", "onboarding", "support"],
-    duration: 1.2,
-  },
-  content_moderation: {
-    asset_uri: "s3://incoming/user-upload.jpg",
-    labels: { violence: 0.01, self_harm: 0, adult: 0.03 },
+  restock_alert: {
+    supplier: "Northstar Wholesale",
+    products: [
+      { sku: "MUG-110", stock: 8, reorder_point: 12, target_stock: 60 },
+      { sku: "TEE-204", stock: 31, reorder_point: 20, target_stock: 80 },
+    ],
     duration: 0.8,
+  },
+  sales_report: {
+    period: "today",
+    orders: [
+      { order_id: "ORD-1040", total: 74.98 },
+      { order_id: "ORD-1041", total: 28.5 },
+      { order_id: "ORD-1042", total: 62.48 },
+    ],
+    top_skus: ["BAG-001", "MUG-110", "TEE-204"],
+    duration: 1.2,
   },
 };
 
@@ -240,24 +252,24 @@ async function submitJob(event) {
 async function uploadDocument(event) {
   event.preventDefault();
   if (!state.token) {
-    setStatus(els.uploadStatus, "Login or register before uploading a document.", true);
+    setStatus(els.uploadStatus, "Login or register before importing inventory.", true);
     return;
   }
   const file = els.documentFile.files?.[0];
   if (!file) {
-    setStatus(els.uploadStatus, "Choose a PDF, DOCX, text, or Markdown file.", true);
+    setStatus(els.uploadStatus, "Choose an inventory CSV file.", true);
     return;
   }
 
   try {
     const formData = new FormData();
     formData.append("file", file);
-    const job = await uploadApi("/api/v1/jobs/documents", formData);
+    const job = await uploadApi("/api/v1/jobs/inventory-import", formData);
     state.jobs.set(job.id, job);
     renderJobs();
     watchJob(job.id);
     refreshStats();
-    setStatus(els.uploadStatus, `Uploaded ${file.name} as ${job.id}`);
+    setStatus(els.uploadStatus, `Imported ${file.name} as ${job.id}`);
     els.uploadForm.reset();
   } catch (error) {
     setStatus(els.uploadStatus, error.message, true);

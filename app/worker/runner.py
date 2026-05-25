@@ -84,8 +84,11 @@ class Worker:
                 return
             logger.info("job_claimed", job_id=job.id, job_type=job.job_type, worker_id=self.worker_id)
             try:
+                processor = PROCESSORS.get(job.job_type)
+                if not processor:
+                    raise ValueError(f"no processor registered for job_type={job.job_type!r}")
                 result = await asyncio.wait_for(
-                    PROCESSORS[job.job_type](job.payload),
+                    processor(job.payload),
                     timeout=self.settings.job_timeout_seconds,
                 )
                 await repo.complete(job.id, result)

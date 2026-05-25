@@ -23,7 +23,7 @@ async def main() -> None:
             async with sem:
                 body = {
                     "job_type": random.choice(
-                        ["document_ocr", "media_transcode", "ai_summarization", "content_moderation"]
+                        ["order_fulfillment", "inventory_recount", "restock_alert", "sales_report"]
                     ),
                     "payload": {"duration": 0.05, "index": i},
                     "priority": random.randint(1, 10),
