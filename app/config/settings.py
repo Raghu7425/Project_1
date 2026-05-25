@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     default_max_retries: int = 3
     redis_stream_prefix: str = "jobs"
     consumer_group: str = "job-workers"
+    upload_dir: str = "storage/uploads"
+    max_upload_bytes: int = 10 * 1024 * 1024
 
 
 @lru_cache

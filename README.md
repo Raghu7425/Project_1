@@ -187,6 +187,14 @@ curl http://localhost:8000/api/v1/admin/stats \
   -H "Authorization: Bearer $TOKEN"
 ```
 
+Upload a local PDF, DOCX, text, or Markdown document for extraction and summarization:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/jobs/documents \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@./sample.pdf"
+```
+
 Seed demo jobs:
 
 ```bash
@@ -206,6 +214,8 @@ python scripts/load_test.py --jobs 500 --concurrency 50
 ## Processing Types
 
 `document_ocr`, `media_transcode`, `ai_summarization`, `content_moderation`.
+
+Document uploads are stored under `storage/uploads` and processed by workers through the normal Redis Streams job flow. Text-based PDFs work through `pypdf`, DOCX files through `python-docx`; scanned PDFs need an OCR engine such as Tesseract or a cloud OCR provider.
 
 ## Production Notes
 

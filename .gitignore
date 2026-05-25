@@ -1,5 +1,6 @@
 __pycache__/
 *.py[cod]
+storage/
 *$py.class
 
 # Python packaging / virtualenvs

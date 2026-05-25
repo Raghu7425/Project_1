@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
@@ -18,6 +19,7 @@ from app.utils.redis import get_redis
 async def lifespan(app: FastAPI):
     configure_logging()
     settings = get_settings()
+    Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
     redis = get_redis()
     await RedisJobQueue(redis, settings).ensure_groups()
     await redis.aclose()

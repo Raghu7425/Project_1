@@ -9,6 +9,8 @@ services:
       RATE_LIMIT_PER_MINUTE: 120
     ports:
       - "8000:8000"
+    volumes:
+      - ./storage:/app/storage
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,6 +36,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - ./storage:/app/storage
     deploy:
       replicas: 1
 

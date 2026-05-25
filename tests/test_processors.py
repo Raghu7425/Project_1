@@ -23,3 +23,19 @@ def test_processors_return_realistic_results():
 def test_ai_processor_can_simulate_provider_failure():
     with pytest.raises(RuntimeError):
         asyncio.run(ai_summarization({"duration": 0, "fail": True}))
+
+
+def test_document_processor_extracts_and_summarizes_text_file(tmp_path):
+    document = tmp_path / "notes.txt"
+    document.write_text(
+        "Realtime processing is useful for document workflows. "
+        "Workers can extract text and summarize the important details. "
+        "The UI can stream status while the job runs.",
+        encoding="utf-8",
+    )
+
+    result = asyncio.run(document_ocr({"duration": 0, "file_path": str(document)}))
+
+    assert result["word_count"] >= 20
+    assert "Realtime processing" in result["extracted_text_preview"]
+    assert "Workers can extract text" in result["summary"]

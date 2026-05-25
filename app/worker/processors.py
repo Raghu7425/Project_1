@@ -1,13 +1,71 @@
 import asyncio
 import random
 import re
+from pathlib import Path
 from typing import Any
 
 from app.models.enums import JobType
 
 
+def _summarize_text(text: str, max_sentences: int = 3) -> str:
+    clean_text = re.sub(r"\s+", " ", text).strip()
+    if not clean_text:
+        return "No extractable text was found."
+    sentences = re.split(r"(?<=[.!?])\s+", clean_text)
+    summary = " ".join(sentence for sentence in sentences[:max_sentences] if sentence)
+    return summary[:1200]
+
+
+def _extract_text_from_file(file_path: str) -> tuple[str, int]:
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"document not found: {path}")
+
+    if path.suffix.lower() == ".pdf":
+        try:
+            from pypdf import PdfReader
+        except ImportError as exc:
+            raise RuntimeError("PDF extraction requires pypdf to be installed") from exc
+
+        reader = PdfReader(str(path))
+        text = "\n\n".join(page.extract_text() or "" for page in reader.pages)
+        return text, len(reader.pages)
+
+    if path.suffix.lower() in {".txt", ".md"}:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        return text, max(1, text.count("\f") + 1)
+
+    if path.suffix.lower() == ".docx":
+        try:
+            from docx import Document
+        except ImportError as exc:
+            raise RuntimeError("DOCX extraction requires python-docx to be installed") from exc
+
+        document = Document(str(path))
+        text = "\n".join(paragraph.text for paragraph in document.paragraphs if paragraph.text)
+        return text, max(1, len(document.paragraphs))
+
+    raise ValueError(f"unsupported document extension: {path.suffix}")
+
+
 async def document_ocr(payload: dict[str, Any]) -> dict[str, Any]:
     await asyncio.sleep(float(payload.get("duration", 1.5)))
+    if payload.get("file_path"):
+        text, pages = await asyncio.to_thread(_extract_text_from_file, str(payload["file_path"]))
+        words = re.findall(r"\w+", text)
+        return {
+            "document_uri": payload.get("file_path"),
+            "filename": payload.get("filename"),
+            "pages": pages,
+            "language": payload.get("language", "en"),
+            "text_length": len(text),
+            "word_count": len(words),
+            "extracted_text_preview": text[:2000],
+            "summary": _summarize_text(text) if payload.get("summarize", True) else None,
+            "search_indexed": True,
+            "artifact": f"documents/ocr/{random.randint(1000, 9999)}.json",
+        }
+
     pages = int(payload.get("pages", random.randint(1, 80)))
     return {
         "document_uri": payload.get("document_uri", "s3://incoming/document.pdf"),

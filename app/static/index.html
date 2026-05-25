@@ -94,6 +94,21 @@
             <p id="formStatus" class="status-text"></p>
           </form>
 
+          <form id="uploadForm" class="panel">
+            <div class="panel-heading">
+              <h3>Upload Document</h3>
+              <p>Upload a PDF, DOCX, text, or Markdown file for text extraction and summarization.</p>
+            </div>
+
+            <label>
+              Document
+              <input id="documentFile" type="file" accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" />
+            </label>
+
+            <button class="primary" type="submit">Upload and process</button>
+            <p id="uploadStatus" class="status-text"></p>
+          </form>
+
           <section class="panel">
             <div class="panel-heading">
               <h3>Live Jobs</h3>

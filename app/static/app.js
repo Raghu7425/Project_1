@@ -44,11 +44,14 @@ const els = {
   refreshStats: document.querySelector("#refreshStats"),
   jobForm: document.querySelector("#jobForm"),
   jobType: document.querySelector("#jobType"),
+  uploadForm: document.querySelector("#uploadForm"),
+  documentFile: document.querySelector("#documentFile"),
   payload: document.querySelector("#payload"),
   priority: document.querySelector("#priority"),
   maxRetries: document.querySelector("#maxRetries"),
   idempotencyKey: document.querySelector("#idempotencyKey"),
   formStatus: document.querySelector("#formStatus"),
+  uploadStatus: document.querySelector("#uploadStatus"),
   jobsList: document.querySelector("#jobsList"),
   stats: {
     queued: document.querySelector("#statQueued"),
@@ -77,6 +80,20 @@ async function api(path, options = {}) {
       ...authHeaders(),
       ...(options.headers || {}),
     },
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    throw new Error(data?.detail || `Request failed with ${response.status}`);
+  }
+  return data;
+}
+
+async function uploadApi(path, formData) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: authHeaders(),
+    body: formData,
   });
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
@@ -220,6 +237,33 @@ async function submitJob(event) {
   }
 }
 
+async function uploadDocument(event) {
+  event.preventDefault();
+  if (!state.token) {
+    setStatus(els.uploadStatus, "Login or register before uploading a document.", true);
+    return;
+  }
+  const file = els.documentFile.files?.[0];
+  if (!file) {
+    setStatus(els.uploadStatus, "Choose a PDF, DOCX, text, or Markdown file.", true);
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const job = await uploadApi("/api/v1/jobs/documents", formData);
+    state.jobs.set(job.id, job);
+    renderJobs();
+    watchJob(job.id);
+    refreshStats();
+    setStatus(els.uploadStatus, `Uploaded ${file.name} as ${job.id}`);
+    els.uploadForm.reset();
+  } catch (error) {
+    setStatus(els.uploadStatus, error.message, true);
+  }
+}
+
 function setDefaultPayload() {
   els.payload.value = JSON.stringify(payloads[els.jobType.value], null, 2);
 }
@@ -231,6 +275,7 @@ els.authButton.addEventListener("click", authenticate);
 els.logoutButton.addEventListener("click", logout);
 els.refreshStats.addEventListener("click", refreshStats);
 els.jobForm.addEventListener("submit", submitJob);
+els.uploadForm.addEventListener("submit", uploadDocument);
 els.jobType.addEventListener("change", setDefaultPayload);
 
 setDefaultPayload();
