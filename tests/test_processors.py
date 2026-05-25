@@ -1,18 +1,25 @@
+import asyncio
+
 import pytest
 
-from app.worker.processors import generate_report, resize_image, send_email
+from app.worker.processors import ai_summarization, content_moderation, document_ocr, media_transcode
 
 
-@pytest.mark.asyncio
-async def test_processors_return_realistic_results():
-    image = await resize_image({"duration": 0, "width": 320, "height": 240})
-    report = await generate_report({"duration": 0, "rows": 42})
+def test_processors_return_realistic_results():
+    async def run() -> tuple[dict, dict, dict]:
+        return await asyncio.gather(
+            document_ocr({"duration": 0, "pages": 3}),
+            media_transcode({"duration": 0, "renditions": ["720p"]}),
+            content_moderation({"duration": 0, "labels": {"adult": 0.1}}),
+        )
 
-    assert image["format"] == "webp"
-    assert report["rows"] == 42
+    ocr, media, moderation = asyncio.run(run())
+
+    assert ocr["pages"] == 3
+    assert media["renditions"] == ["720p"]
+    assert moderation["action"] == "approve"
 
 
-@pytest.mark.asyncio
-async def test_email_processor_can_simulate_provider_failure():
+def test_ai_processor_can_simulate_provider_failure():
     with pytest.raises(RuntimeError):
-        await send_email({"duration": 0, "to": "fail@example.com"})
+        asyncio.run(ai_summarization({"duration": 0, "fail": True}))

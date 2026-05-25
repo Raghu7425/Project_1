@@ -22,7 +22,9 @@ async def main() -> None:
         async def submit(i: int) -> int:
             async with sem:
                 body = {
-                    "job_type": random.choice(["pdf_processing", "image_resize", "email_sending", "report_generation"]),
+                    "job_type": random.choice(
+                        ["document_ocr", "media_transcode", "ai_summarization", "content_moderation"]
+                    ),
                     "payload": {"duration": 0.05, "index": i},
                     "priority": random.randint(1, 10),
                     "idempotency_key": f"load-{i}",

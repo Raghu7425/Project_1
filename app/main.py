@@ -28,7 +28,7 @@ settings = get_settings()
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
-    description="Backend-focused distributed job platform with Redis Streams workers.",
+    description="Real-time AI, media, and document processing platform with Redis Streams workers.",
     lifespan=lifespan,
 )
 app.middleware("http")(request_logging_middleware)

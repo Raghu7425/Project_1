@@ -10,7 +10,7 @@ class JobStatus(StrEnum):
 
 
 class JobType(StrEnum):
-    PDF_PROCESSING = "pdf_processing"
-    IMAGE_RESIZE = "image_resize"
-    EMAIL_SENDING = "email_sending"
-    REPORT_GENERATION = "report_generation"
+    DOCUMENT_OCR = "document_ocr"
+    MEDIA_TRANSCODE = "media_transcode"
+    AI_SUMMARIZATION = "ai_summarization"
+    CONTENT_MODERATION = "content_moderation"

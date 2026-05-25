@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    app_name: str = "Distributed Job Processing Platform"
+    app_name: str = "Realtime AI Media Processing Platform"
     environment: str = "local"
     api_host: str = "0.0.0.0"
     api_port: int = 8000

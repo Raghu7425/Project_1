@@ -1,6 +1,6 @@
-# Distributed Job Processing Platform
+# Real-Time AI Media Processing Platform
 
-A backend-focused asynchronous job platform inspired by Celery, Sidekiq, and Temporal. It uses FastAPI for the API, PostgreSQL for durable metadata, Redis Streams for queueing, Redis for hot status cache and rate limiting, and a separate worker process for concurrent job execution.
+A real-time AI, media, and document processing platform inspired by Celery, Sidekiq, and Temporal. It uses FastAPI for the API, PostgreSQL for durable metadata, Redis Streams for queueing, Redis for hot status cache and rate limiting, WebSockets for live job updates, and a separate worker process for concurrent AI/media/document execution.
 
 ## Architecture
 
@@ -81,14 +81,14 @@ flowchart TB
 
 The system is split into two deployable runtime roles that share the same codebase and container image:
 
-- `api`: handles authentication, validation, idempotent job submission, status reads, WebSocket status streaming, rate limiting, health checks, OpenAPI, and Prometheus metrics.
-- `worker`: consumes Redis Streams through a consumer group, claims jobs in PostgreSQL, executes job processors concurrently, records results, schedules retries, and moves terminal failures to the DLQ.
+- `api`: handles authentication, validation, idempotent processing requests, status reads, WebSocket status streaming, rate limiting, health checks, OpenAPI, and Prometheus metrics.
+- `worker`: consumes Redis Streams through a consumer group, claims jobs in PostgreSQL, executes AI/media/document processors concurrently, records results, schedules retries, and moves terminal failures to the DLQ.
 
 PostgreSQL is the durable source of truth for job state. Redis Streams provide queue durability and fan-out across multiple worker instances. Redis cache is used only for hot reads and abuse prevention, so losing cached keys does not lose jobs.
 
 ## Queue Flow
 
-1. Clients register or log in and submit jobs to `POST /api/v1/jobs`.
+1. Clients register or log in and submit processing jobs to `POST /api/v1/jobs`.
 2. The API stores the job in PostgreSQL with `queued` status and publishes the job id to a priority Redis Stream.
 3. Workers consume through a Redis consumer group, atomically claim the job in PostgreSQL, and mark it `processing`.
 4. Successful jobs are marked `completed` with a JSON result.
@@ -168,11 +168,16 @@ curl -X POST http://localhost:8000/api/v1/jobs \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "job_type": "pdf_processing",
-    "payload": {"pages": 24, "duration": 1},
+    "job_type": "document_ocr",
+    "payload": {
+      "document_uri": "s3://incoming/invoice-1042.pdf",
+      "pages": 24,
+      "entities": ["invoice_number", "vendor", "total"],
+      "duration": 1
+    },
     "priority": 1,
     "max_retries": 3,
-    "idempotency_key": "customer-123-report-2026-05-24"
+    "idempotency_key": "customer-123-invoice-2026-05-24"
   }'
 
 curl http://localhost:8000/api/v1/jobs/<job-id> \
@@ -197,6 +202,10 @@ python scripts/load_test.py --jobs 500 --concurrency 50
 ## Status Values
 
 `queued`, `processing`, `completed`, `failed`, `retrying`.
+
+## Processing Types
+
+`document_ocr`, `media_transcode`, `ai_summarization`, `content_moderation`.
 
 ## Production Notes
 

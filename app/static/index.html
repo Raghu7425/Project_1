@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>JobFlow Console</title>
+    <title>RealtimeAI Studio</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="shell">
       <aside class="sidebar">
         <div>
-          <p class="eyebrow">Distributed jobs</p>
-          <h1>JobFlow Console</h1>
-          <p class="intro">Submit jobs, watch workers process them, and inspect queue health from one focused control surface.</p>
+          <p class="eyebrow">AI media pipeline</p>
+          <h1>RealtimeAI Studio</h1>
+          <p class="intro">Submit document, media, and AI analysis work, then watch the processing pipeline update live.</p>
         </div>
 
         <section class="auth-panel" aria-label="Authentication">
@@ -37,10 +37,10 @@
       <section class="workspace">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Operations</p>
-            <h2>Queue Dashboard</h2>
+            <p class="eyebrow">Live operations</p>
+            <h2>Processing Dashboard</h2>
           </div>
-          <button id="refreshStats" class="icon-button" type="button" title="Refresh stats" aria-label="Refresh stats">↻</button>
+          <button id="refreshStats" class="icon-button" type="button" title="Refresh stats" aria-label="Refresh stats">&#8635;</button>
         </header>
 
         <section class="stats-grid" aria-label="Queue statistics">
@@ -55,17 +55,17 @@
         <section class="content-grid">
           <form id="jobForm" class="panel">
             <div class="panel-heading">
-              <h3>Create Job</h3>
-              <p>Payload updates when the type changes. You can edit the JSON before submitting.</p>
+              <h3>Create Processing Job</h3>
+              <p>Choose a pipeline preset, tune the JSON payload, and stream status as workers complete it.</p>
             </div>
 
             <label>
               Job type
               <select id="jobType">
-                <option value="pdf_processing">PDF processing</option>
-                <option value="image_resize">Image resize</option>
-                <option value="email_sending">Email sending</option>
-                <option value="report_generation">Report generation</option>
+                <option value="document_ocr">Document OCR</option>
+                <option value="media_transcode">Media transcode</option>
+                <option value="ai_summarization">AI summarization</option>
+                <option value="content_moderation">Content moderation</option>
               </select>
             </label>
 
@@ -96,8 +96,8 @@
 
           <section class="panel">
             <div class="panel-heading">
-              <h3>Recent Jobs</h3>
-              <p>Open jobs stay connected until they complete or fail.</p>
+              <h3>Live Jobs</h3>
+              <p>Open jobs keep a WebSocket connection until they complete or fail.</p>
             </div>
             <div id="jobsList" class="jobs-list empty">No jobs submitted yet.</div>
           </section>

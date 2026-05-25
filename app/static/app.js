@@ -6,10 +6,32 @@ const state = {
 };
 
 const payloads = {
-  pdf_processing: { pages: 24, duration: 1 },
-  image_resize: { source: "uploads/banner.png", width: 1280, height: 720, format: "webp", duration: 1 },
-  email_sending: { to: "customer@example.com", subject: "Welcome", duration: 0.5 },
-  report_generation: { rows: 1000, duration: 2 },
+  document_ocr: {
+    document_uri: "s3://incoming/invoice-1042.pdf",
+    pages: 12,
+    language: "en",
+    entities: ["invoice_number", "vendor", "total", "due_date"],
+    duration: 1,
+  },
+  media_transcode: {
+    source_uri: "s3://incoming/product-demo.mov",
+    duration_seconds: 95.4,
+    codec: "h264",
+    container: "mp4",
+    renditions: ["1080p", "720p", "480p"],
+    duration: 1,
+  },
+  ai_summarization: {
+    model: "gpt-4.1-mini",
+    text: "Customer calls mention latency, onboarding friction, and positive support sentiment across enterprise accounts.",
+    topics: ["latency", "onboarding", "support"],
+    duration: 1.2,
+  },
+  content_moderation: {
+    asset_uri: "s3://incoming/user-upload.jpg",
+    labels: { violence: 0.01, self_harm: 0, adult: 0.03 },
+    duration: 0.8,
+  },
 };
 
 const els = {
@@ -145,7 +167,7 @@ function renderJobs() {
         </div>
         <span class="badge ${job.status}">${job.status}</span>
       </header>
-      <div class="meta">Priority ${job.priority} · Retries ${job.retry_count}/${job.max_retries}</div>
+      <div class="meta">Priority ${job.priority} &middot; Retries ${job.retry_count}/${job.max_retries}</div>
       <pre>${JSON.stringify(job.result || { error: job.error_message } || {}, null, 2)}</pre>
     `;
     els.jobsList.appendChild(card);
