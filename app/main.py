@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from app.api.handlers import admin, auth, health, jobs
@@ -35,4 +37,12 @@ app.include_router(health.router)
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(jobs.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+
+@app.get("/", include_in_schema=False)
+async def frontend() -> FileResponse:
+    return FileResponse("app/static/index.html")
+
+
 FastAPIInstrumentor.instrument_app(app)

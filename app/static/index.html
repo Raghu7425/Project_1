@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JobFlow Console</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="sidebar">
+        <div>
+          <p class="eyebrow">Distributed jobs</p>
+          <h1>JobFlow Console</h1>
+          <p class="intro">Submit jobs, watch workers process them, and inspect queue health from one focused control surface.</p>
+        </div>
+
+        <section class="auth-panel" aria-label="Authentication">
+          <div class="mode-switch" role="tablist" aria-label="Authentication mode">
+            <button class="mode-button active" data-auth-mode="login" type="button">Login</button>
+            <button class="mode-button" data-auth-mode="register" type="button">Register</button>
+          </div>
+          <label>
+            Email
+            <input id="email" type="email" autocomplete="email" value="demo@example.com" />
+          </label>
+          <label>
+            Password
+            <input id="password" type="password" autocomplete="current-password" value="password123" />
+          </label>
+          <button id="authButton" class="primary" type="button">Login</button>
+          <button id="logoutButton" class="ghost hidden" type="button">Log out</button>
+          <p id="authStatus" class="status-text">Not connected</p>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Operations</p>
+            <h2>Queue Dashboard</h2>
+          </div>
+          <button id="refreshStats" class="icon-button" type="button" title="Refresh stats" aria-label="Refresh stats">↻</button>
+        </header>
+
+        <section class="stats-grid" aria-label="Queue statistics">
+          <article><span>Queued</span><strong id="statQueued">0</strong></article>
+          <article><span>Processing</span><strong id="statProcessing">0</strong></article>
+          <article><span>Retrying</span><strong id="statRetrying">0</strong></article>
+          <article><span>Completed</span><strong id="statCompleted">0</strong></article>
+          <article><span>Failed</span><strong id="statFailed">0</strong></article>
+          <article><span>DLQ</span><strong id="statDlq">0</strong></article>
+        </section>
+
+        <section class="content-grid">
+          <form id="jobForm" class="panel">
+            <div class="panel-heading">
+              <h3>Create Job</h3>
+              <p>Payload updates when the type changes. You can edit the JSON before submitting.</p>
+            </div>
+
+            <label>
+              Job type
+              <select id="jobType">
+                <option value="pdf_processing">PDF processing</option>
+                <option value="image_resize">Image resize</option>
+                <option value="email_sending">Email sending</option>
+                <option value="report_generation">Report generation</option>
+              </select>
+            </label>
+
+            <div class="row">
+              <label>
+                Priority
+                <input id="priority" type="number" min="1" max="10" value="5" />
+              </label>
+              <label>
+                Max retries
+                <input id="maxRetries" type="number" min="0" max="10" value="3" />
+              </label>
+            </div>
+
+            <label>
+              Idempotency key
+              <input id="idempotencyKey" type="text" placeholder="optional" />
+            </label>
+
+            <label>
+              Payload JSON
+              <textarea id="payload" spellcheck="false"></textarea>
+            </label>
+
+            <button class="primary" type="submit">Submit job</button>
+            <p id="formStatus" class="status-text"></p>
+          </form>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <h3>Recent Jobs</h3>
+              <p>Open jobs stay connected until they complete or fail.</p>
+            </div>
+            <div id="jobsList" class="jobs-list empty">No jobs submitted yet.</div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
